@@ -25,20 +25,24 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class ImageArea extends Rectangle {
 
     private final double HANDLE_RADIUS = 5;
-    private final Color HANDLE_COLOR = Color.RED;
-    private final Color MOVER_HANDLE_COLOR = new Color(0, 0, 1, 1.0);
+    private final Color HANDLE_COLOR = new Color(1.0f, 0.5f, 0.5f, 1.0);
+    private final Color HANDLE_COLOR_MARK = Color.RED;
+    private final Color MOVER_HANDLE_COLOR = new Color(0.5f, 0.5f, 1, 1.0);
+    private final Color MOVER_HANDLE_COLOR_MARK = new Color(0, 0, 1, 1.0);
+
     private final Color DEFAULT_FILL_COLOR = new Color(1, 0, 0, 0.2);
     private final Color MOUSE_OVER_COLOR = new Color(0, 0, 1, 0.3);
     private final Color MARK_COLOR = new Color(0, 1, 0, 0.2);
 
-    private List<Circle> handleCircles = new ArrayList<>();
+    private Circle resizeHandleNW;
+    private Circle resizeHandleSE;
+    private Circle moveHandle;
 
     private String title;
     private String alt;
@@ -61,7 +65,7 @@ public class ImageArea extends Rectangle {
         this.setFill(DEFAULT_FILL_COLOR);
         this.setStroke(Color.RED);
         this.setStrokeWidth(1);
-        this.setStrokeType(StrokeType.INSIDE);
+        this.setStrokeType(StrokeType.OUTSIDE);
         this.getStrokeDashArray().addAll(12.0, 17.0, 12.0, 17.0);
         this.setOnMouseEntered(e -> {
             if (!marked) {
@@ -78,26 +82,22 @@ public class ImageArea extends Rectangle {
 
     private void makeDraggable() {
         // top left resize handle:
-        Circle resizeHandleNW = new Circle(HANDLE_RADIUS, HANDLE_COLOR);
+        resizeHandleNW = new Circle(HANDLE_RADIUS, HANDLE_COLOR);
         // bind to top left corner of Rectangle:
         resizeHandleNW.centerXProperty().bind(this.xProperty());
         resizeHandleNW.centerYProperty().bind(this.yProperty());
 
         // bottom right resize handle:
-        Circle resizeHandleSE = new Circle(HANDLE_RADIUS, HANDLE_COLOR);
+        resizeHandleSE = new Circle(HANDLE_RADIUS, HANDLE_COLOR);
         // bind to bottom right corner of Rectangle:
         resizeHandleSE.centerXProperty().bind(this.xProperty().add(this.widthProperty()));
         resizeHandleSE.centerYProperty().bind(this.yProperty().add(this.heightProperty()));
 
         // move handle:
-        Circle moveHandle = new Circle(HANDLE_RADIUS, MOVER_HANDLE_COLOR);
+        moveHandle = new Circle(HANDLE_RADIUS, MOVER_HANDLE_COLOR);
         // bind to bottom center of Rectangle:
         moveHandle.centerXProperty().bind(this.xProperty().add(this.widthProperty().divide(2)));
         moveHandle.centerYProperty().bind(this.yProperty().add(this.heightProperty()));
-
-        handleCircles.add(resizeHandleNW);
-        handleCircles.add(resizeHandleSE);
-        handleCircles.add(moveHandle);
 
         // force circles to live in same parent as rectangle:
         this.parentProperty().addListener((obs, oldParent, newParent) -> {
@@ -271,12 +271,18 @@ public class ImageArea extends Rectangle {
         this.marked = marked;
         if (marked) {
             this.setFill(MARK_COLOR);
+            resizeHandleNW.setFill(HANDLE_COLOR_MARK);
+            resizeHandleSE.setFill(HANDLE_COLOR_MARK);
+            moveHandle.setFill(MOVER_HANDLE_COLOR_MARK);
         } else {
             this.setFill(DEFAULT_FILL_COLOR);
+            resizeHandleNW.setFill(HANDLE_COLOR);
+            resizeHandleSE.setFill(HANDLE_COLOR);
+            moveHandle.setFill(MOVER_HANDLE_COLOR);
         }
     }
 
     public List<Circle> getHandleCircles() {
-        return handleCircles;
+        return Arrays.asList(resizeHandleNW, resizeHandleSE, moveHandle);
     }
 }

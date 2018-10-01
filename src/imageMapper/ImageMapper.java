@@ -32,10 +32,12 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 public class ImageMapper extends Application {
 
@@ -44,6 +46,7 @@ public class ImageMapper extends Application {
 
     private List<ImageArea> imageAreas = new ArrayList<>();
     private ImageArea markedImageArea = null;
+    private TextField basePathText;
     private TextField filePathText;
     private TextArea htmlInputText;
     private TextArea htmlOutputText;
@@ -65,14 +68,46 @@ public class ImageMapper extends Application {
         grid.setHgap(5);
         grid.setVgap(5);
         grid.setPadding(new Insets(10, 10, 10, 10));
-
-        initControls(grid);
         grid.add(stackPane, 0, 1, 4, 10);
+        initControls(grid);
+
+
+        primaryStage.setOnCloseRequest(e -> {
+            saveProperties();
+        });
+        loadProperties();
 
         primaryStage.setTitle("ImageMapper");
         Scene scene = new Scene(grid, 1500, 768);
+        grid.prefWidthProperty().bind(scene.widthProperty());
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+
+    private void loadProperties() {
+        Properties prop = new Properties();
+        try (InputStream reader = new FileInputStream("ImageMapper.properties")) {
+            prop.load(reader);
+            basePathText.setText(prop.getProperty("basePath"));
+            filePathText.setText(prop.getProperty("filePath"));
+            htmlInputText.setText(prop.getProperty("outputHtmlText"));
+            updateDisplayForMarked();
+            updateMarkedFromFields();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void saveProperties() {
+        Properties prop = new Properties();
+        prop.setProperty("basePath", basePathText.getText());
+        prop.setProperty("filePath", filePathText.getText());
+        prop.setProperty("outputHtmlText", htmlOutputText.getText());
+        try (OutputStream writer = new FileOutputStream("ImageMapper.properties")) {
+            prop.store(writer, "");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
     private void areaClicked(ImageArea clickedArea) {
@@ -128,44 +163,25 @@ public class ImageMapper extends Application {
 
     private void initControls(GridPane grid) {
         Label basePathLabel = new Label("Base Path");
-        TextField basePathText = new TextField("C:/workspace/");
+        basePathText = new TextField("C:/workspace/");
         basePathText.setPrefColumnCount(30);
         Label filePathLabel = new Label("File Path");
         filePathText = new TextField("Unbenannt.png");
         filePathText.setPrefColumnCount(30);
         Button loadImageBtn = new Button("Load Image");
         loadImageBtn.setOnAction(e -> {
-            try {
-                InputStream inputStream = new FileInputStream(basePathText.getText() + filePathText.getText());
+            try (InputStream inputStream = new FileInputStream(basePathText.getText() + filePathText.getText())) {
                 Image newImg = new Image(inputStream);
                 imageView.setImage(newImg);
-            } catch (FileNotFoundException e1) {
-                e1.printStackTrace();
-            }
-        });
-        Button newAreaBtn = new Button("New Area");
-        newAreaBtn.setOnAction(e -> {
-            ImageArea area = new ImageArea(100, 10, 100, 100, "", "", "", "");
-            area.setOnMouseClicked(
-                    ev -> areaClicked(area));
-            stackPane.getChildren().add(1, area);
-            imageAreas.add(area);
-            updateDisplayForMarked();
-        });
-        Button deleteAreaBtn = new Button("Delete Area");
-        deleteAreaBtn.setOnAction(e -> {
-            if (markedImageArea != null) {
-                imageAreas.remove(markedImageArea);
-                stackPane.getChildren().removeAll(markedImageArea.getHandleCircles());
-                stackPane.getChildren().remove(markedImageArea);
-                markedImageArea = null;
-                updateDisplayForMarked();
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         });
 
         Label htmlInputLabel = new Label("HTML input");
         htmlInputText = new TextArea();
         htmlInputText.setPrefRowCount(4);
+        htmlInputText.setPrefColumnCount(40);
         htmlInputText.setWrapText(true);
         htmlInputText.textProperty().addListener((obs, oldText, newText) -> parseHtml(newText));
 
@@ -175,8 +191,29 @@ public class ImageMapper extends Application {
         htmlOutputText.setWrapText(true);
         htmlOutputText.setEditable(false);
 
+        Button newAreaBtn = new Button("New Area");
+        newAreaBtn.setOnAction(e ->
+        {
+            ImageArea area = new ImageArea(100, 10, 100, 100, "", "", "", "");
+            area.setOnMouseClicked(ev -> areaClicked(area));
+            stackPane.getChildren().add(1, area);
+            imageAreas.add(area);
+            updateDisplayForMarked();
+        });
+        Button deleteAreaBtn = new Button("Delete Area");
+        deleteAreaBtn.setOnAction(e ->
+        {
+            if (markedImageArea != null) {
+                imageAreas.remove(markedImageArea);
+                stackPane.getChildren().removeAll(markedImageArea.getHandleCircles());
+                stackPane.getChildren().remove(markedImageArea);
+                markedImageArea = null;
+                updateDisplayForMarked();
+            }
+        });
         Button copyToClipBoard = new Button("Copy to Clipboard");
-        copyToClipBoard.setOnAction(e -> {
+        copyToClipBoard.setOnAction(e ->
+        {
             final Clipboard clipboard = Clipboard.getSystemClipboard();
             final ClipboardContent content = new ClipboardContent();
 
@@ -206,14 +243,14 @@ public class ImageMapper extends Application {
         onclickText.setOnKeyReleased(e -> updateMarkedFromFields());
 
         Hyperlink infoText = new Hyperlink("https://www.github.com/resclify/ImageMapper");
-        infoText.setOnAction(e ->
-                getHostServices().showDocument("https://www.github.com/resclify/ImageMapper"));
+        infoText.setOnAction(e -> getHostServices().showDocument("https://www.github.com/resclify/ImageMapper"));
 
         grid.add(basePathLabel, 0, 0);
         grid.add(basePathText, 1, 0);
         grid.add(filePathLabel, 2, 0);
         grid.add(filePathText, 3, 0);
         grid.add(loadImageBtn, 4, 0, 1, 1);
+
         grid.add(infoText, 5, 0, 3, 1);
         GridPane.setHalignment(infoText, HPos.RIGHT);
 
