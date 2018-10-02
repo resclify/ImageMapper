@@ -26,18 +26,18 @@ public class HtmlWriter {
             StringBuilder sb = new StringBuilder();
             for (ImageArea area : areas) {
                 sb.append("<area ");
-                sb.append("coords=\"").append(area.getCoordsString()).append("\" ");
                 sb.append("shape=\"rect\" ");
+                sb.append("coords=\"").append(area.getCoordsString()).append("\" ");
+                sb.append("alt=\"").append(escapeHtmlString(area.getAlt())).append("\" ");
+                sb.append("data-toggle=\"popover\" ");
+                sb.append("data-trigger=\"hover\" ");
                 if (area.getTitle() != null && !"".equals(area.getTitle())) {
                     sb.append("title=\"").append(escapeHtmlString(area.getTitle())).append("\" ");
                 }
-                sb.append("alt=\"").append(escapeHtmlString(area.getAlt())).append("\" ");
-                sb.append("data-content=\"").append(escapeHtmlString(area.getDataContent())).append("\" ");
                 if (area.getOnClick() != null && !"".equals(area.getOnClick())) {
                     sb.append("onclick=\"").append(area.getOnClick()).append("\" ");
                 }
-                sb.append("data-toggle=\"popover\" ");
-                sb.append("data-trigger=\"hover\" ");
+                sb.append("data-content=\"").append(escapeHtmlString(area.getDataContent())).append("\" ");
                 sb.append("/>\n");
             }
 

@@ -170,7 +170,7 @@ public class ImageMapper extends Application {
         filePathText.setPrefColumnCount(30);
         Button loadImageBtn = new Button("Load Image");
         loadImageBtn.setOnAction(e -> {
-            try (InputStream inputStream = new FileInputStream(basePathText.getText() + filePathText.getText())) {
+            try (InputStream inputStream = new FileInputStream(basePathText.getText() + "/" + filePathText.getText())) {
                 Image newImg = new Image(inputStream);
                 imageView.setImage(newImg);
             } catch (Exception ex) {
@@ -181,7 +181,6 @@ public class ImageMapper extends Application {
         Label htmlInputLabel = new Label("HTML input");
         htmlInputText = new TextArea();
         htmlInputText.setPrefRowCount(4);
-        htmlInputText.setPrefColumnCount(40);
         htmlInputText.setWrapText(true);
         htmlInputText.textProperty().addListener((obs, oldText, newText) -> parseHtml(newText));
 
@@ -190,6 +189,7 @@ public class ImageMapper extends Application {
         htmlOutputText.setPrefRowCount(10);
         htmlOutputText.setWrapText(true);
         htmlOutputText.setEditable(false);
+        htmlOutputText.setStyle("-fx-font-family: \"Courier New\";");
 
         Button newAreaBtn = new Button("New Area");
         newAreaBtn.setOnAction(e ->
@@ -223,26 +223,34 @@ public class ImageMapper extends Application {
 
         Label coordsLabel = new Label("coords");
         coordsText = new TextField();
+        coordsText.setStyle("-fx-font-family: \"Courier New\";");
         coordsText.setOnKeyReleased(e -> updateMarkedFromFields());
         Label titleLabel = new Label("title");
         titleText = new TextArea();
         titleText.setWrapText(true);
         titleText.setPrefRowCount(3);
+        titleText.setStyle("-fx-font-family: \"Courier New\";");
         titleText.setOnKeyReleased(e -> updateMarkedFromFields());
 
         Label altLabel = new Label("alt");
         altText = new TextField();
+        altText.setStyle("-fx-font-family: \"Courier New\";");
         altText.setOnKeyReleased(e -> updateMarkedFromFields());
 
         Label contentLabel = new Label("content-data");
         contentText = new TextArea();
         contentText.setWrapText(true);
+        contentText.setStyle("-fx-font-family: \"Courier New\";");
         contentText.setOnKeyReleased(e -> updateMarkedFromFields());
+
         Label onclickLabel = new Label("onclick");
         onclickText = new TextField();
+        onclickText.setStyle("-fx-font-family: \"Courier New\";");
         onclickText.setOnKeyReleased(e -> updateMarkedFromFields());
 
         Hyperlink infoText = new Hyperlink("https://www.github.com/resclify/ImageMapper");
+        infoText.setPrefWidth(500);
+        infoText.setAlignment(Pos.CENTER_RIGHT);
         infoText.setOnAction(e -> getHostServices().showDocument("https://www.github.com/resclify/ImageMapper"));
 
         grid.add(basePathLabel, 0, 0);
@@ -298,11 +306,11 @@ public class ImageMapper extends Application {
                 stackPane.getChildren().add(1, area);
             }
             htmlOutputText.setText(HtmlWriter.write(imageAreas));
-            htmlInputText.setStyle("-fx-control-inner-background: green;");
+            htmlInputText.setStyle("-fx-control-inner-background: green; -fx-font-family: \"Courier New\";");
             markedImageArea = null;
         } catch (Exception e) {
             e.printStackTrace();
-            htmlInputText.setStyle("-fx-control-inner-background: orange;");
+            htmlInputText.setStyle("-fx-control-inner-background: orange; -fx-font-family: \"Courier New\";");
         }
     }
 

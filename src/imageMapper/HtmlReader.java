@@ -51,30 +51,15 @@ public class HtmlReader {
 
     public static ParseResult read(String input, List<ImageArea> areas) throws Exception {
         MapParser mapParser = new MapParser();
-        InputStream stream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
-        ParserDelegator pd = new ParserDelegator();
-        pd.parse(new BufferedReader(new InputStreamReader(stream)), mapParser, false);
-        if (mapParser.thrownException) {
-            throw new Exception("Exception occured during parsing.");
-        } else {
-            return new ParseResult(mapParser.imgSrc, mapParser.areas);
-        }
-    }
-
-
-    private static String prepareInput(String input) {
-        input = input.replaceAll("\"\\s*>\\s*<area", "\"/><area");
-        input = input.trim();
-        if (input.endsWith(">")) {
-            input = input.substring(0, input.length() - 1);
-            input = input.trim();
-            if (!input.endsWith("/")) {
-                input = input + "/>";
+        try (InputStream stream = new ByteArrayInputStream(input.getBytes())) {
+            ParserDelegator pd = new ParserDelegator();
+            pd.parse(new BufferedReader(new InputStreamReader(stream)), mapParser, false);
+            if (mapParser.thrownException) {
+                throw new Exception("Exception occured during parsing.");
             } else {
-                input = input + ">";
+                return new ParseResult(mapParser.imgSrc, mapParser.areas);
             }
         }
-        return input;
     }
 
     private static class MapParser extends HTMLEditorKit.ParserCallback {
@@ -100,7 +85,6 @@ public class HtmlReader {
                 if (!"rect".equals(a.getAttribute(Attribute.SHAPE))) {
                     thrownException = true;
                 }
-
 
                 String coords = (String) a.getAttribute(Attribute.COORDS);
                 String title = (String) a.getAttribute(Attribute.TITLE);

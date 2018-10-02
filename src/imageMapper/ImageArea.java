@@ -27,6 +27,9 @@ import javafx.scene.shape.StrokeType;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
+
+import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
 
 public class ImageArea extends Rectangle {
 
@@ -66,7 +69,7 @@ public class ImageArea extends Rectangle {
         this.setStroke(Color.RED);
         this.setStrokeWidth(1);
         this.setStrokeType(StrokeType.OUTSIDE);
-        this.getStrokeDashArray().addAll(12.0, 17.0, 12.0, 17.0);
+        this.getStrokeDashArray().addAll(8.0, 13.0, 8.0, 13.0);
         this.setOnMouseEntered(e -> {
             if (!marked) {
                 this.setFill(MOUSE_OVER_COLOR);
@@ -124,8 +127,8 @@ public class ImageArea extends Rectangle {
                 double deltaY = event.getSceneY() - mouseLocation.value.getY();
 
                 if (event.isShiftDown()) {
-                    deltaX *= 0.25;
-                    deltaY *= 0.25;
+                    deltaX *= 0.23;
+                    deltaY *= 0.23;
                 }
 
                 if (event.isControlDown()) {
@@ -156,8 +159,8 @@ public class ImageArea extends Rectangle {
                 double deltaY = event.getSceneY() - mouseLocation.value.getY();
 
                 if (event.isShiftDown()) {
-                    deltaX *= 0.25;
-                    deltaY *= 0.25;
+                    deltaX *= 0.23;
+                    deltaY *= 0.23;
                 }
                 if (event.isControlDown()) {
                     deltaY = 0;
@@ -185,8 +188,8 @@ public class ImageArea extends Rectangle {
                 double deltaY = event.getSceneY() - mouseLocation.value.getY();
 
                 if (event.isShiftDown()) {
-                    deltaX *= 0.25;
-                    deltaY *= 0.25;
+                    deltaX *= 0.23;
+                    deltaY *= 0.23;
                 }
 
                 double newX = this.getX() + deltaX;
