@@ -170,6 +170,6 @@ public class HtmlWriter {
                     break;
             }
         }
-        return sb.toString().replaceAll(" {2}", "&nbsp;&nbsp;");
+        return sb.toString();//.replaceAll(" {2}", "&nbsp;&nbsp;");
     }
 }

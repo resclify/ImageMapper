@@ -17,19 +17,19 @@
 
 package imageMapper;
 
+import javafx.application.Platform;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
 
+import java.awt.*;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
-
-import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
 
 public class ImageArea extends Rectangle {
 
@@ -70,6 +70,9 @@ public class ImageArea extends Rectangle {
         this.setStrokeWidth(1);
         this.setStrokeType(StrokeType.OUTSIDE);
         this.getStrokeDashArray().addAll(8.0, 13.0, 8.0, 13.0);
+
+        makeDraggable();
+
         this.setOnMouseEntered(e -> {
             if (!marked) {
                 this.setFill(MOUSE_OVER_COLOR);
@@ -80,7 +83,20 @@ public class ImageArea extends Rectangle {
                 this.setFill(DEFAULT_FILL_COLOR);
             }
         });
-        makeDraggable();
+        for (Circle c : getHandleCircles()) {
+            c.setOnMouseEntered(e -> {
+                if (!marked) {
+                    this.setFill(MOUSE_OVER_COLOR);
+
+                }
+            });
+            c.setOnMouseExited(e -> {
+                if (!marked) {
+                    this.setFill(DEFAULT_FILL_COLOR);
+
+                }
+            });
+        }
     }
 
     private void makeDraggable() {
@@ -126,25 +142,34 @@ public class ImageArea extends Rectangle {
                 double deltaX = event.getSceneX() - mouseLocation.value.getX();
                 double deltaY = event.getSceneY() - mouseLocation.value.getY();
 
+                if (event.isControlDown()) {
+                    for (Node n : this.getParent().getChildrenUnmodifiable()) {
+                        if (n instanceof ImageArea && !n.equals(this)) {
+                            Rectangle r = new Rectangle(this.getX() + deltaX + 1, this.getY() + 1, this.getWidth() - deltaX - 2, this.getHeight() - 2);
+                            if ((r.intersects(n.getBoundsInLocal()))) {
+                                deltaX = 0;
+                            }
+                            r = new Rectangle(this.getX() + 1, this.getY() + deltaY + 1, this.getWidth() - 2, this.getHeight() - deltaY - 2);
+                            if ((r.intersects(n.getBoundsInLocal()))) {
+                                deltaY = 0;
+                            }
+                        }
+                    }
+                }
+
                 if (event.isShiftDown()) {
                     deltaX *= 0.23;
                     deltaY *= 0.23;
                 }
 
-                if (event.isControlDown()) {
-                    deltaY = 0;
-                } else if (event.isAltDown()) {
-                    deltaX = 0;
-                }
-
                 double newX = this.getX() + deltaX;
-                if (newX >= 0
+                if (newX > 0
                         && newX <= this.getX() + this.getWidth()) {
                     this.setX(newX);
                     this.setWidth(this.getWidth() - deltaX);
                 }
                 double newY = this.getY() + deltaY;
-                if (newY >= 0
+                if (newY > 0
                         && newY <= this.getY() + this.getHeight()) {
                     this.setY(newY);
                     this.setHeight(this.getHeight() - deltaY);
@@ -158,14 +183,24 @@ public class ImageArea extends Rectangle {
                 double deltaX = event.getSceneX() - mouseLocation.value.getX();
                 double deltaY = event.getSceneY() - mouseLocation.value.getY();
 
+                if (event.isControlDown()) {
+                    for (Node n : this.getParent().getChildrenUnmodifiable()) {
+                        if (n instanceof ImageArea && !n.equals(this)) {
+                            Rectangle r = new Rectangle(this.getX() + 1, this.getY() + 1, this.getWidth() + deltaX - 2, this.getHeight() - 2);
+                            if ((r.intersects(n.getBoundsInLocal()))) {
+                                deltaX = 0;
+                            }
+                            r = new Rectangle(this.getX() + 1, this.getY() + 1, this.getWidth() - 2, this.getHeight() + deltaY - 2);
+                            if ((r.intersects(n.getBoundsInLocal()))) {
+                                deltaY = 0;
+                            }
+                        }
+                    }
+                }
+
                 if (event.isShiftDown()) {
                     deltaX *= 0.23;
                     deltaY *= 0.23;
-                }
-                if (event.isControlDown()) {
-                    deltaY = 0;
-                } else if (event.isAltDown()) {
-                    deltaX = 0;
                 }
 
                 double newMaxX = this.getX() + this.getWidth() + deltaX;
@@ -178,6 +213,7 @@ public class ImageArea extends Rectangle {
                         && newMaxY <= this.getParent().getBoundsInLocal().getHeight()) {
                     this.setHeight(this.getHeight() + deltaY);
                 }
+
                 mouseLocation.value = new Point2D(event.getSceneX(), event.getSceneY());
             }
         });
@@ -187,6 +223,21 @@ public class ImageArea extends Rectangle {
                 double deltaX = event.getSceneX() - mouseLocation.value.getX();
                 double deltaY = event.getSceneY() - mouseLocation.value.getY();
 
+                if (event.isControlDown()) {
+                    for (Node n : this.getParent().getChildrenUnmodifiable()) {
+                        if (n instanceof ImageArea && !n.equals(this)) {
+                            Rectangle r = new Rectangle(this.getX() + deltaX + 1, this.getY() + 1, this.getWidth() - 2, this.getHeight() - 2);
+                            if ((r.intersects(n.getBoundsInLocal()))) {
+                                deltaX = 0;
+                            }
+                            r = new Rectangle(this.getX() + 1, this.getY() + deltaY + 1, this.getWidth() - 2, this.getHeight() - 2);
+                            if ((r.intersects(n.getBoundsInLocal()))) {
+                                deltaY = 0;
+                            }
+                        }
+                    }
+                }
+
                 if (event.isShiftDown()) {
                     deltaX *= 0.23;
                     deltaY *= 0.23;
@@ -194,12 +245,12 @@ public class ImageArea extends Rectangle {
 
                 double newX = this.getX() + deltaX;
                 double newMaxX = newX + this.getWidth();
-                if (newX >= 0 && newMaxX <= this.getParent().getBoundsInLocal().getWidth()) {
+                if (newX > 0 && newMaxX <= this.getParent().getBoundsInLocal().getWidth()) {
                     this.setX(newX);
                 }
                 double newY = this.getY() + deltaY;
                 double newMaxY = newY + this.getHeight();
-                if (newY >= 0 && newMaxY <= this.getParent().getBoundsInLocal().getHeight()) {
+                if (newY > 0 && newMaxY <= this.getParent().getBoundsInLocal().getHeight()) {
                     this.setY(newY);
                 }
                 mouseLocation.value = new Point2D(event.getSceneX(), event.getSceneY());
@@ -210,7 +261,7 @@ public class ImageArea extends Rectangle {
     private void setUpDragging(Circle circle, Wrapper<Point2D> mouseLocation) {
 
         circle.setOnDragDetected(event -> {
-            circle.getParent().setCursor(Cursor.CLOSED_HAND);
+            circle.getParent().setCursor(Cursor.NONE);
             mouseLocation.value = new Point2D(event.getSceneX(), event.getSceneY());
         });
 
@@ -220,6 +271,17 @@ public class ImageArea extends Rectangle {
             this.setY(Math.round(getY()));
             this.setWidth(Math.round(getWidth()));
             this.setHeight(Math.round(getHeight()));
+
+            //Set mouse position to circle
+            Platform.runLater(() -> {
+                try {
+                    Robot robot = new Robot();
+                    Point2D point2D = this.localToScreen(circle.getCenterX(), circle.getCenterY());
+                    robot.mouseMove((int) Math.round(point2D.getX()), (int) Math.round(point2D.getY()));
+                } catch (AWTException e) {
+                    e.printStackTrace();
+                }
+            });
             mouseLocation.value = null;
         });
     }
@@ -286,6 +348,6 @@ public class ImageArea extends Rectangle {
     }
 
     public List<Circle> getHandleCircles() {
-        return Arrays.asList(resizeHandleNW, resizeHandleSE, moveHandle);
+        return Arrays.asList(resizeHandleNW, moveHandle, resizeHandleSE);
     }
 }

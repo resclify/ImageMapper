@@ -26,7 +26,6 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -108,11 +107,13 @@ public class HtmlReader {
                             y = y + height;
                             height = -height;
                         }
+                        if (x <= 0)
+                            x = 1;
+                        if (y <= 0)
+                            y = 1;
+                        ImageArea newImageArea = new ImageArea(x, y, width, height, title, alt, dataContent, onclick);
+                        areas.add(newImageArea);
 
-                        if (x > 0 && y > 0) {
-                            ImageArea newImageArea = new ImageArea(x, y, width, height, title, alt, dataContent, onclick);
-                            areas.add(newImageArea);
-                        }
                     } catch (Exception ex) {
                         thrownException = true;
                     }

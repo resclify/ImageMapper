@@ -29,6 +29,7 @@ import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
 import java.io.FileInputStream;
@@ -40,7 +41,6 @@ import java.util.List;
 import java.util.Properties;
 
 public class ImageMapper extends Application {
-
     private Pane stackPane;
     private ImageView imageView;
 
@@ -54,6 +54,8 @@ public class ImageMapper extends Application {
     private TextArea titleText;
     private TextField altText;
     private TextArea contentText;
+    private Button removeLineBreaksBtn;
+    private Button removeWhitespacesBtn;
     private TextField onclickText;
 
     @Override
@@ -61,16 +63,15 @@ public class ImageMapper extends Application {
         stackPane = new Pane();
         imageView = new ImageView();
         stackPane.getChildren().add(imageView);
-        stackPane.setOnMouseReleased(e -> updateDisplayForMarked());
+        stackPane.setOnMouseReleased(e -> updateFieldsForMarked());
 
         GridPane grid = new GridPane();
         grid.setAlignment(Pos.TOP_LEFT);
         grid.setHgap(5);
         grid.setVgap(5);
         grid.setPadding(new Insets(10, 10, 10, 10));
-        grid.add(stackPane, 0, 1, 4, 10);
+        grid.add(stackPane, 0, 1, 4, 11);
         initControls(grid);
-
 
         primaryStage.setOnCloseRequest(e -> {
             saveProperties();
@@ -81,6 +82,7 @@ public class ImageMapper extends Application {
         Scene scene = new Scene(grid, 1500, 768);
         grid.prefWidthProperty().bind(scene.widthProperty());
         primaryStage.setScene(scene);
+        primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/icon.png")));
         primaryStage.show();
     }
 
@@ -91,7 +93,7 @@ public class ImageMapper extends Application {
             basePathText.setText(prop.getProperty("basePath"));
             filePathText.setText(prop.getProperty("filePath"));
             htmlInputText.setText(prop.getProperty("outputHtmlText"));
-            updateDisplayForMarked();
+            updateFieldsForMarked();
             updateMarkedFromFields();
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -110,24 +112,45 @@ public class ImageMapper extends Application {
         }
     }
 
-    private void areaClicked(ImageArea clickedArea) {
+    private void areaClickedOrAdded(ImageArea clickedArea) {
         for (ImageArea i : imageAreas) {
             i.setMarked(false);
         }
         markedImageArea = clickedArea;
         markedImageArea.setMarked(true);
+        stackPane.getChildren().removeAll(markedImageArea.getHandleCircles());
+        stackPane.getChildren().addAll(markedImageArea.getHandleCircles());
 
-        updateDisplayForMarked();
+        htmlInputText.setStyle("-fx-control-inner-background: white; -fx-text-fill: lightgrey; -fx-font-family: \"Courier New\";");
+        htmlInputText.setEditable(false);
+        htmlInputText.setTooltip(new Tooltip("Double click to unlock"));
+
+        updateFieldsForMarked();
     }
 
-    private void updateDisplayForMarked() {
+    private void updateFieldsForMarked() {
         if (markedImageArea != null) {
             coordsText.setStyle("-fx-control-inner-background: white;");
             coordsText.setText(markedImageArea.getCoordsString());
+            coordsText.setDisable(false);
             titleText.setText(markedImageArea.getTitle());
+            titleText.setDisable(false);
             altText.setText(markedImageArea.getAlt());
+            altText.setDisable(false);
             contentText.setText(markedImageArea.getDataContent());
+            contentText.setDisable(false);
+            removeLineBreaksBtn.setDisable(false);
+            removeWhitespacesBtn.setDisable(false);
             onclickText.setText(markedImageArea.getOnClick());
+            onclickText.setDisable(false);
+        } else {
+            coordsText.setDisable(true);
+            titleText.setDisable(true);
+            altText.setDisable(true);
+            contentText.setDisable(true);
+            removeLineBreaksBtn.setDisable(true);
+            removeWhitespacesBtn.setDisable(true);
+            onclickText.setDisable(true);
         }
         htmlOutputText.setText(HtmlWriter.write(imageAreas));
     }
@@ -169,38 +192,51 @@ public class ImageMapper extends Application {
         filePathText = new TextField("Unbenannt.png");
         filePathText.setPrefColumnCount(30);
         Button loadImageBtn = new Button("Load Image");
-        loadImageBtn.setOnAction(e -> {
-            try (InputStream inputStream = new FileInputStream(basePathText.getText() + "/" + filePathText.getText())) {
-                Image newImg = new Image(inputStream);
-                imageView.setImage(newImg);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        });
+        loadImageBtn.setOnAction(e -> loadImage());
 
         Label htmlInputLabel = new Label("HTML input");
         htmlInputText = new TextArea();
-        htmlInputText.setPrefRowCount(4);
+        htmlInputText.setPrefRowCount(6);
         htmlInputText.setWrapText(true);
         htmlInputText.textProperty().addListener((obs, oldText, newText) -> parseHtml(newText));
+        htmlInputText.setStyle("-fx-control-inner-background: white; -fx-text-fill: black; -fx-font-family: \"Courier New\";");
+        htmlInputText.setOnMouseClicked(e -> {
+            if (e.getClickCount() >= 2) {
+                htmlInputText.setEditable(true);
+                htmlInputText.setTooltip(null);
+                htmlInputText.setStyle("-fx-control-inner-background: white; -fx-text-fill: black; -fx-font-family: \"Courier New\";");
+            }
+        });
 
         Label htmlOutputLabel = new Label("HTML output");
         htmlOutputText = new TextArea();
-        htmlOutputText.setPrefRowCount(10);
+        htmlOutputText.setPrefRowCount(12);
         htmlOutputText.setWrapText(true);
         htmlOutputText.setEditable(false);
         htmlOutputText.setStyle("-fx-font-family: \"Courier New\";");
 
-        Button newAreaBtn = new Button("New Area");
-        newAreaBtn.setOnAction(e ->
+        Button newAreaBtn = new Button("Add new area");
+        newAreaBtn.setOnMouseClicked(e ->
         {
-            ImageArea area = new ImageArea(100, 10, 100, 100, "", "", "", "");
-            area.setOnMouseClicked(ev -> areaClicked(area));
+            ImageArea area;
+            if (markedImageArea != null) {
+                if (e.isShiftDown()) {
+                    area = new ImageArea(markedImageArea.getX(), markedImageArea.getY() + markedImageArea.getHeight() + 1, markedImageArea.getWidth(), markedImageArea.getHeight());
+                } else {
+                    area = new ImageArea(markedImageArea.getX() + markedImageArea.getWidth() + 1, markedImageArea.getY(), markedImageArea.getWidth(), markedImageArea.getHeight());
+                }
+            } else {
+                area = new ImageArea(1, 1, 50, 50);
+            }
+            area.setOnMouseClicked(ev -> areaClickedOrAdded(area));
+            for (Circle c : area.getHandleCircles()) {
+                c.setOnMousePressed(ev -> areaClickedOrAdded(area));
+            }
             stackPane.getChildren().add(1, area);
             imageAreas.add(area);
-            updateDisplayForMarked();
+            areaClickedOrAdded(area);
         });
-        Button deleteAreaBtn = new Button("Delete Area");
+        Button deleteAreaBtn = new Button("Delete area");
         deleteAreaBtn.setOnAction(e ->
         {
             if (markedImageArea != null) {
@@ -208,10 +244,10 @@ public class ImageMapper extends Application {
                 stackPane.getChildren().removeAll(markedImageArea.getHandleCircles());
                 stackPane.getChildren().remove(markedImageArea);
                 markedImageArea = null;
-                updateDisplayForMarked();
+                updateFieldsForMarked();
             }
         });
-        Button copyToClipBoard = new Button("Copy to Clipboard");
+        Button copyToClipBoard = new Button("Copy to clipboard");
         copyToClipBoard.setOnAction(e ->
         {
             final Clipboard clipboard = Clipboard.getSystemClipboard();
@@ -228,7 +264,7 @@ public class ImageMapper extends Application {
         Label titleLabel = new Label("title");
         titleText = new TextArea();
         titleText.setWrapText(true);
-        titleText.setPrefRowCount(3);
+        titleText.setPrefRowCount(5);
         titleText.setStyle("-fx-font-family: \"Courier New\";");
         titleText.setOnKeyReleased(e -> updateMarkedFromFields());
 
@@ -240,8 +276,25 @@ public class ImageMapper extends Application {
         Label contentLabel = new Label("content-data");
         contentText = new TextArea();
         contentText.setWrapText(true);
+        contentText.setPrefRowCount(20);
         contentText.setStyle("-fx-font-family: \"Courier New\";");
         contentText.setOnKeyReleased(e -> updateMarkedFromFields());
+
+        removeWhitespacesBtn = new Button("Remove whitespaces");
+        removeWhitespacesBtn.setOnAction(e -> {
+            while (contentText.getText().contains("  ")) {
+                contentText.setText(contentText.getText().replaceAll(" {2}", " ").trim());
+            }
+            updateMarkedFromFields();
+        });
+        removeLineBreaksBtn = new Button("Remove line breaks");
+        removeLineBreaksBtn.setOnAction(e -> {
+            while (contentText.getText().contains("\n")) {
+                contentText.setText(contentText.getText().replaceAll(" \n", " "));
+                contentText.setText(contentText.getText().replaceAll("\n", " "));
+            }
+            updateMarkedFromFields();
+        });
 
         Label onclickLabel = new Label("onclick");
         onclickText = new TextField();
@@ -249,7 +302,6 @@ public class ImageMapper extends Application {
         onclickText.setOnKeyReleased(e -> updateMarkedFromFields());
 
         Hyperlink infoText = new Hyperlink("https://www.github.com/resclify/ImageMapper");
-        infoText.setPrefWidth(500);
         infoText.setAlignment(Pos.CENTER_RIGHT);
         infoText.setOnAction(e -> getHostServices().showDocument("https://www.github.com/resclify/ImageMapper"));
 
@@ -259,7 +311,7 @@ public class ImageMapper extends Application {
         grid.add(filePathText, 3, 0);
         grid.add(loadImageBtn, 4, 0, 1, 1);
 
-        grid.add(infoText, 5, 0, 3, 1);
+        grid.add(infoText, 7, 0, 1, 1);
         GridPane.setHalignment(infoText, HPos.RIGHT);
 
         grid.add(htmlInputLabel, 4, 1, 3, 1);
@@ -280,9 +332,22 @@ public class ImageMapper extends Application {
         grid.add(altText, 5, 6, 3, 1);
         grid.add(contentLabel, 4, 7);
         grid.add(contentText, 5, 7, 3, 1);
-        grid.add(onclickLabel, 4, 8);
-        grid.add(onclickText, 5, 8, 3, 1);
+        grid.add(removeWhitespacesBtn, 5, 8, 1, 1);
+        grid.add(removeLineBreaksBtn, 6, 8, 1, 1);
 
+        grid.add(onclickLabel, 4, 9);
+        grid.add(onclickText, 5, 9, 3, 1);
+
+    }
+
+    private void loadImage() {
+        try (InputStream inputStream = new FileInputStream(basePathText.getText() + "/" + filePathText.getText())) {
+            Image newImg = new Image(inputStream);
+            imageView.setImage(newImg);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            imageView.setImage(null);
+        }
     }
 
     private void parseHtml(String htmlString) {
@@ -297,17 +362,24 @@ public class ImageMapper extends Application {
             HtmlReader.ParseResult parseResult = HtmlReader.read(htmlString, imageAreas);
             if (parseResult.getImgSrc() != null) {
                 filePathText.setText(parseResult.getImgSrc());
+                loadImage();
             }
             imageAreas = parseResult.getAreas();
 
             for (ImageArea area : imageAreas) {
                 area.setOnMouseClicked(
-                        e -> areaClicked(area));
+                        e -> areaClickedOrAdded(area));
+                for (Circle c : area.getHandleCircles()) {
+                    c.setOnMousePressed(ev -> areaClickedOrAdded(area));
+                }
                 stackPane.getChildren().add(1, area);
             }
             htmlOutputText.setText(HtmlWriter.write(imageAreas));
-            htmlInputText.setStyle("-fx-control-inner-background: green; -fx-font-family: \"Courier New\";");
-            markedImageArea = null;
+
+            if (!imageAreas.isEmpty()) {
+                markedImageArea = null;
+                updateFieldsForMarked();
+            }
         } catch (Exception e) {
             e.printStackTrace();
             htmlInputText.setStyle("-fx-control-inner-background: orange; -fx-font-family: \"Courier New\";");
